@@ -86,13 +86,15 @@
                         ":error")}
      :content [(failure-message m)]}))
 
-(defn testcase->xml [test]
-  (let [{::testable/keys [id skip events]
+(defn testcase->xml [{::keys [file-prefix]} test]
+  (let [{::testable/keys [id skip events meta]
          ::result/keys   [pass fail error]
          :or             {pass 0 fail 0 error 0}} test]
     {:tag     :testcase
      :attrs   (merge {:name       (test-name test)
-                      :classname  (namespace id)}
+                      :classname  (namespace id)
+                      :file (str file-prefix (:file meta))
+                      :line (:line meta)}
                      (time-stat test))
      :content (keep (fn [m]
                       (cond
@@ -100,7 +102,7 @@
                         (hierarchy/fail-type? m) (failure->xml m)))
                     events)}))
 
-(defn suite->xml [{::keys [omit-system-out?]} suite index]
+(defn suite->xml [{::keys [omit-system-out?] :as result} suite index]
   (let [id (::testable/id suite)]
     {:tag     :testsuite
      :attrs   (-> {:name     (test-name suite)
@@ -112,7 +114,7 @@
                                     "")))
      :content (concat
                 [{:tag :properties}]
-                (map testcase->xml (leaf-tests suite))
+                (map (partial testcase->xml result) (leaf-tests suite))
                 [(merge {:tag :system-out}
                         (when-not omit-system-out?
                           {:content (->> suite
