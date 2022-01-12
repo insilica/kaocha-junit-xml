@@ -103,10 +103,9 @@
                           (hierarchy/error-type? m) (error->xml m)
                           (hierarchy/fail-type? m) (failure->xml m)))
                   events)
-                (when (seq output)
-                  [{:tag :system-out
-                    :attrs {}
-                    :content [output]}]))}))
+                [{:tag :system-out
+                  :attrs {}
+                  :content [(or output "")]}])}))
 
 (defn suite->xml [{::keys [omit-system-out?] :as result} suite index]
   (let [id (::testable/id suite)]
