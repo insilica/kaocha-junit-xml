@@ -86,8 +86,9 @@
                         ":error")}
      :content [(failure-message m)]}))
 
-(defn testcase->xml [{::keys [file-prefix]} test]
-  (let [{::testable/keys [id skip events meta]
+(defn testcase->xml [{::keys [file-prefix] :as result} test]
+  (let [{:kaocha.plugin.capture-output/keys [output]
+         ::testable/keys [id skip events meta]
          ::result/keys   [pass fail error]
          :or             {pass 0 fail 0 error 0}} test]
     {:tag     :testcase
@@ -96,11 +97,16 @@
                       :file (str file-prefix (:file meta))
                       :line (:line meta)}
                      (time-stat test))
-     :content (keep (fn [m]
-                      (cond
-                        (hierarchy/error-type? m) (error->xml m)
-                        (hierarchy/fail-type? m) (failure->xml m)))
-                    events)}))
+     :content (concat
+                (keep (fn [m]
+                        (cond
+                          (hierarchy/error-type? m) (error->xml m)
+                          (hierarchy/fail-type? m) (failure->xml m)))
+                  events)
+                (when (seq output)
+                  [{:tag :system-out
+                    :attrs {}
+                    :content [output]}]))}))
 
 (defn suite->xml [{::keys [omit-system-out?] :as result} suite index]
   (let [id (::testable/id suite)]
