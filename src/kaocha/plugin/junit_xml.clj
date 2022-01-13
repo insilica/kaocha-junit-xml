@@ -86,6 +86,11 @@
                         ":error")}
      :content [(failure-message m)]}))
 
+(defn skipped->xml [m]
+  {:tag   :skipped
+   :attrs {}
+   :content nil})
+
 (defn testcase->xml [{::keys [file-prefix] :as result} test]
   (let [{:kaocha.plugin.capture-output/keys [output]
          ::testable/keys [id skip events meta]
@@ -101,7 +106,8 @@
                 (keep (fn [m]
                         (cond
                           (hierarchy/error-type? m) (error->xml m)
-                          (hierarchy/fail-type? m) (failure->xml m)))
+                          (hierarchy/fail-type? m) (failure->xml m)
+                          (hierarchy/pending? m) (skipped->xml m)))
                   events)
                 [{:tag :system-out
                   :attrs {}
